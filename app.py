@@ -1,11 +1,16 @@
+import os
 import requests
 import streamlit as st
 
 # ─────────────────────────────────────────────
-# IBM / HuggingFace Configuration
+# IBM Configuration
 # ─────────────────────────────────────────────
-import os
-HF_TOKEN = os.environ.get("HF_TOKEN", "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")
+IBM_API_KEY = "mh4shRxAdU_kviVnBpNH2nZ0x9P1PuzztPBRFMGtYiR8"
+PROJECT_ID  = "b0942349-cc4f-4ab8-9eb9-921f035992fc"
+SPACE_ID    = "0a1ce142-e928-4e13-bc4c-56265c702819"
+WATSONX_URL = "https://us-south.ml.cloud.ibm.com"
+IAM_URL     = "https://iam.cloud.ibm.com/identity/token"
+GRANITE_MODEL = "ibm/granite-3-8b-instruct"
 
 # ─────────────────────────────────────────────
 # Page Configuration
@@ -24,13 +29,11 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
-    /* Main Background */
     .stApp {
         background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
         font-family: 'Poppins', sans-serif;
     }
 
-    /* Hero Header */
     .hero-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 60%, #f5a623 100%);
         padding: 40px 30px;
@@ -38,24 +41,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 25px;
         box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-        animation: shimmer 3s infinite;
-    }
-
-    @keyframes shimmer {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .hero-title {
@@ -91,10 +76,8 @@ st.markdown("""
         border-radius: 20px;
         font-size: 0.75em;
         border: 1px solid rgba(255,255,255,0.3);
-        backdrop-filter: blur(10px);
     }
 
-    /* Stats Bar */
     .stats-bar {
         display: flex;
         justify-content: space-around;
@@ -103,13 +86,9 @@ st.markdown("""
         border-radius: 15px;
         padding: 15px;
         margin-bottom: 20px;
-        backdrop-filter: blur(10px);
     }
 
-    .stat-item {
-        text-align: center;
-        color: white;
-    }
+    .stat-item { text-align: center; color: white; }
 
     .stat-number {
         font-size: 1.8em;
@@ -126,7 +105,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Chat Messages */
     .user-msg {
         background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
@@ -151,7 +129,6 @@ st.markdown("""
         box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         font-size: 0.95em;
         line-height: 1.8;
-        backdrop-filter: blur(10px);
     }
 
     .msg-label-user {
@@ -171,15 +148,12 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Sidebar */
     .css-1d391kg, [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
         border-right: 1px solid rgba(255,255,255,0.1);
     }
 
-    [data-testid="stSidebar"] * {
-        color: white !important;
-    }
+    [data-testid="stSidebar"] * { color: white !important; }
 
     .sidebar-header {
         background: linear-gradient(135deg, #667eea, #f5a623);
@@ -193,7 +167,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #667eea, #764ba2) !important;
         color: white !important;
@@ -204,7 +177,6 @@ st.markdown("""
         letter-spacing: 1px !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3) !important;
-        font-family: 'Poppins', sans-serif !important;
     }
 
     .stButton > button:hover {
@@ -212,15 +184,6 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5) !important;
     }
 
-    /* Input */
-    .stChatInput > div {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-        border-radius: 15px !important;
-        color: white !important;
-    }
-
-    /* Welcome Card */
     .welcome-card {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
@@ -228,13 +191,9 @@ st.markdown("""
         padding: 40px;
         text-align: center;
         color: white;
-        backdrop-filter: blur(10px);
     }
 
-    .welcome-emoji {
-        font-size: 4em;
-        margin-bottom: 15px;
-    }
+    .welcome-emoji { font-size: 4em; margin-bottom: 15px; }
 
     .welcome-title {
         font-size: 1.5em;
@@ -251,14 +210,6 @@ st.markdown("""
         line-height: 1.8;
     }
 
-    .suggestion-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-    }
-
     .chip {
         background: rgba(102, 126, 234, 0.2);
         border: 1px solid rgba(102, 126, 234, 0.4);
@@ -266,18 +217,10 @@ st.markdown("""
         padding: 8px 16px;
         border-radius: 20px;
         font-size: 0.8em;
-        cursor: pointer;
+        margin: 3px;
+        display: inline-block;
     }
 
-    /* Selectbox & Slider */
-    .stSelectbox > div, .stMultiSelect > div {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-        border-radius: 10px !important;
-        color: white !important;
-    }
-
-    /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -285,33 +228,48 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# AI Model Setup
+# IBM watsonx Functions
 # ─────────────────────────────────────────────
-from huggingface_hub import InferenceClient
-
-client = InferenceClient(api_key=HF_TOKEN)
-
-SYSTEM_PROMPT = """You are an expert AI Travel Planner for Indian travellers.
-Help users plan amazing trips within India and abroad.
-Suggest destinations, create itineraries, recommend hotels and transport,
-give food tips, and manage budgets in Indian Rupees (₹).
-Be friendly, enthusiastic and well-organized.
-Always format itineraries with clear Day-wise plans.
-Use emojis to make responses more engaging."""
+def get_token():
+    resp = requests.post(IAM_URL, data={
+        "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
+        "apikey": IBM_API_KEY
+    })
+    resp.raise_for_status()
+    return resp.json()["access_token"]
 
 def travel_agent(user_message, history):
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    for turn in history[-5:]:
-        messages.append({"role": "user", "content": turn["user"]})
-        messages.append({"role": "assistant", "content": turn["assistant"]})
-    messages.append({"role": "user", "content": user_message})
+    token = get_token()
+    url = f"{WATSONX_URL}/ml/v1/text/generation?version=2023-05-29"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
 
-    response = client.chat.completions.create(
-        model="mistralai/Mistral-7B-Instruct-v0.3",
-        messages=messages,
-        max_tokens=1000
-    )
-    return response.choices[0].message.content
+    prompt = """You are an expert AI Travel Planner for Indian travellers.
+Help users plan amazing trips within India and abroad.
+Always show budget in Indian Rupees (Rs.).
+Format itineraries with clear Day-wise plans.
+Use emojis to make responses engaging.\n\n"""
+
+    for turn in history[-5:]:
+        prompt += f"Human: {turn['user']}\nAssistant: {turn['assistant']}\n\n"
+    prompt += f"Human: {user_message}\nAssistant:"
+
+   body = {
+    "model_id": GRANITE_MODEL,
+    "project_id": PROJECT_ID,
+    "input": prompt,
+    "parameters": {
+        "decoding_method": "greedy",
+        "max_new_tokens": 800,
+        "repetition_penalty": 1.1
+    }
+}
+    }
+    resp = requests.post(url, headers=headers, json=body)
+    resp.raise_for_status()
+    return resp.json()["results"][0]["generated_text"].strip()
 
 # ─────────────────────────────────────────────
 # Hero Header
@@ -367,7 +325,7 @@ with st.sidebar:
 
     destination = st.text_input("📍 Where to?", placeholder="e.g., Goa, Manali, Paris")
     days = st.slider("📅 Trip Duration (Days)", 1, 15, 5)
-    budget = st.selectbox("💰 Budget", ["Budget (₹5,000-15,000)", "Mid-Range (₹15,000-40,000)", "Luxury (₹40,000+)"])
+    budget = st.selectbox("💰 Budget", ["Budget (Rs.5,000-15,000)", "Mid-Range (Rs.15,000-40,000)", "Luxury (Rs.40,000+)"])
     interests = st.multiselect("🎯 Your Interests", [
         "🏖️ Beaches", "🏔️ Mountains", "🏛️ History & Culture",
         "🍜 Food & Cuisine", "🛍️ Shopping", "🌿 Nature & Wildlife",
@@ -378,13 +336,12 @@ with st.sidebar:
     if st.button("🚀 Generate My Trip Plan!", use_container_width=True):
         if destination:
             interest_str = ", ".join(interests) if interests else "general sightseeing"
-            msg = f"Plan a complete {days}-day trip to {destination}. Budget: {budget}. Interests: {interest_str}. Include day-wise itinerary, hotel recommendations, transport options, food spots, and budget breakdown in Indian Rupees (₹)."
+            msg = f"Plan a complete {days}-day trip to {destination}. Budget: {budget}. Interests: {interest_str}. Include day-wise itinerary, hotel recommendations, transport options, food spots, and budget breakdown in Indian Rupees."
             st.session_state["quick_msg"] = msg
         else:
             st.warning("Please enter a destination!")
 
     st.markdown("---")
-
     st.markdown("**💡 Try asking:**")
     suggestions = [
         "Best places in Rajasthan?",
@@ -398,7 +355,6 @@ with st.sidebar:
             st.session_state["quick_msg"] = s
 
     st.markdown("---")
-
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state["history"] = []
         st.rerun()
@@ -410,6 +366,9 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────
+# Main Chat Area
+# ─────────────────────────────────────────────
 if not st.session_state["history"]:
     st.markdown("""
     <div class="welcome-card">
@@ -421,25 +380,21 @@ if not st.session_state["history"]:
             Ask me about destinations, itineraries, budgets, hotels,<br>
             local food, packing tips, and much more!
         </div>
-        <div class="suggestion-chips">
-            <span class="chip">🏖️ Plan a Goa trip</span>
-            <span class="chip">🏔️ Best hill stations</span>
-            <span class="chip">✈️ International travel tips</span>
-            <span class="chip">💰 Budget travel India</span>
-        </div>
+        <br>
+        <span class="chip">🏖️ Plan a Goa trip</span>
+        <span class="chip">🏔️ Best hill stations</span>
+        <span class="chip">✈️ International travel tips</span>
+        <span class="chip">💰 Budget travel India</span>
     </div>
     """, unsafe_allow_html=True)
 else:
     for turn in st.session_state["history"]:
-        st.markdown(f"""
-        <div class="msg-label-user">You 👤</div>
-        <div class="user-msg">{turn["user"]}</div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
-        <div class="msg-label-agent">✈️ Travel Agent</div>
-        <div class="agent-msg">{turn["assistant"]}</div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-label-user">You 👤</div><div class="user-msg">{turn["user"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="msg-label-agent">✈️ Travel Agent</div><div class="agent-msg">{turn["assistant"]}</div>', unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────
+# Chat Input
+# ─────────────────────────────────────────────
 user_input = st.chat_input("✈️ Ask your travel question...")
 
 if "quick_msg" in st.session_state:
